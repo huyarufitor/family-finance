@@ -6,7 +6,7 @@
 
 - Supabase 新加坡免费项目 `fsgeecoskegtvwhatsvn`，数据库启用 RLS，云函数自行鉴权。
 - GitHub 仓库 `huyarufitor/family-finance`，Pages 构建时仅注入公开配置。
-- 模型：阿里云百炼兼容接口，按用户账号可用模型及免费额度联调。
+- 模型：OpenRouter 固定免费模型 nvidia/nemotron-3.5-super-vl:free；百炼账号余额不足，遵照不充值的约束改用此方案，真实调用 cost=0。
 - 邮件：Resend 托管收件地址与签名 webhook。Pipedream 公告工作流将于 2027 年停用，因此不采用。
 - 第一条可靠自动同步路径：用户将官方 CSV 账单附件发送/规则转发到渠道专用收件地址，签名校验、匹配账户、解析、复用 import-bills 幂等接口。
 - 收件地址按渠道绑定固定家庭与账户；不读取整个邮箱。只接受用户选定的转发发件人，真实财务数据开始传输前明确来源和目的地。

@@ -4,7 +4,7 @@
 
 - 网站：https://huyarufitor.github.io/family-finance/ ，GitHub Pages + Actions；无需自建服务器。
 - Supabase 免费项目 `family-finance`，新加坡区域。已执行两项迁移，部署 `parse-entry`、`import-bills`、`email-bills`。已启用表级 RLS、实时订阅及正式站点重定向地址。
-- GitHub OAuth 提供商已配置，公开 Auth settings 返回 github=true；前端构建开关已启用。用户的实际浏览器 OAuth 授权与回调仍待验证。
+- GitHub OAuth 提供商已配置，公开 Auth settings 返回 github=true；前端构建开关已启用。线上按钮已成功跳转至 Family Finance 授权页，仅申请只读邮箱地址；等待用户本人确认授权后验证回调。
 - AI 已接入 OpenRouter 固定免费模型 `nvidia/nemotron-3.5-super-vl:free`，关闭 reasoning，不配置付费后备模型。直连真实调用 usage.cost=0；真实 Supabase 登录用户调用云函数将“今天中午吃快餐花了25元”解析为餐饮支出 2500 分。免费服务有可用性和速率限制，失败可使用本地解析。
 - Resend Full access 密钥已验证，已取得免费托管收件域名并创建 email.received webhook。签名密钥和收件域名已配置到 Supabase，前端公开域名已配置。免费套餐的测试发信只能发送至注册邮箱，不能直接向托管收件域名发送；真实收件等待用户从自己的邮箱发送合成 CSV。
 
@@ -40,6 +40,6 @@
 - 自动邮件当前仅接受带原始交易号的未加密 CSV，每封 1—5 个附件、合计 5MB / 5000 笔。不支持 PDF、Excel、ZIP 或正文账单。手动 CSV 缺交易号时仍需人工核对预览。
 - 没有已授权银行或支付机构个人流水 API；不将邮件接收当作已开通银行 API。
 - 语音依赖浏览器及识别服务，未进行真实麦克风录音验证。
-- 本次新增配置与修复的 GitHub Actions 上线结果将在推送后核对。
+- 提交 83f9db1 的 GitHub Actions 运行 38912277313 检查与部署均成功；线上页面 HTTP200，构建包含 GitHub 登录按钮和托管收件域名。
 
 服务端密钥仅存本机被忽略文件及托管服务配置，不进入前端构建或 Git 仓库。
