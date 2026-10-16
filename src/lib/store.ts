@@ -221,6 +221,35 @@ export async function removeEntry(id: string) {
     persistDemo();
   }
 }
+export function personRemovalBlocker(id: string): string {
+  if (!state.data.people.some((p) => p.id === id)) return "成员不存在或没有删除权限，请刷新后重试";
+  const accounts = state.data.accounts.filter((a) => a.personId === id).length;
+  const transactions = state.data.transactions.filter((t) => t.personId === id).length;
+  if (accounts || transactions)
+    return `已有 ${accounts} 个账户、${transactions} 笔账单，无法删除`;
+  return "";
+}
+export async function removePerson(id: string) {
+  const blocker = personRemovalBlocker(id);
+  if (blocker) throw new Error(blocker);
+  if (state.mode === "cloud") {
+    if (!cloud || !state.householdId) throw new Error("请先创建或加入家庭");
+    const { data, error } = await cloud
+      .from("people")
+      .delete()
+      .eq("id", id)
+      .eq("household_id", state.householdId)
+      .select("id");
+    // Foreign keys protect against accounts added by another member after our check.
+    if (error?.code === "23503") throw new Error("该成员已关联账户或账单，无法删除，请刷新后查看");
+    if (error) throw error;
+    if (!data?.length) throw new Error("成员不存在或没有删除权限，请刷新后重试");
+    await refreshCloud();
+  } else {
+    state.data.people = state.data.people.filter((p) => p.id !== id);
+    persistDemo();
+  }
+}
 export async function signOut() {
   if (cloud) {
     const { error } = await cloud.auth.signOut();

@@ -143,3 +143,31 @@ test("mobile navigation keeps every page within the viewport", async ({
     ).toBeLessThanOrEqual(390);
   }
 });
+
+test("manages empty members with confirmation, protects linked members and clears deleted filters", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "添加成员", exact: true }).click();
+  await page.getByLabel("成员称呼").fill("待删除成员");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page.getByRole("button", { name: "待删除成员", exact: true }).click();
+  await page.getByRole("button", { name: "管理成员", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "管理家庭成员" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "删除成员林予", exact: true })).toBeDisabled();
+  await expect(page.getByRole("dialog").getByText(/已有.*账户.*无法删除/).first()).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  page.once("dialog", async dialog => { expect(dialog.message()).toContain("待删除成员"); await dialog.dismiss(); });
+  await page.getByRole("button", { name: "删除成员待删除成员", exact: true }).click();
+  await expect(page.getByRole("button", { name: "删除成员待删除成员", exact: true })).toBeVisible();
+  page.once("dialog", async dialog => { expect(dialog.message()).toContain("无法撤销"); await dialog.accept(); });
+  await page.getByRole("button", { name: "删除成员待删除成员", exact: true }).click();
+  await expect(page.getByRole("button", { name: "删除成员待删除成员", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "关闭弹窗", exact: true }).click();
+  await expect(page.getByText("全家的财务概况")).toBeVisible();
+  await expect(page.getByRole("button", { name: "待删除成员", exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "待删除成员", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "资产配置", exact: true }).click();
+  await page.getByRole("button", { name: "管理成员", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "管理家庭成员" })).toBeVisible();
+});

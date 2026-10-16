@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import AppIcon from "./components/AppIcon.vue";
 import TrendChart from "./components/TrendChart.vue";
 import EntryDialog from "./components/EntryDialog.vue";
 import ImportDialog from "./components/ImportDialog.vue";
 import ModalShell from "./components/ModalShell.vue";
 import EmailChannels from "./components/EmailChannels.vue";
+import MemberManager from "./components/MemberManager.vue";
 import {
   accountValue,
   dateRange,
@@ -58,6 +59,10 @@ const page = ref("overview"),
   customEnd = ref(isoDate()),
   search = ref(""),
   kindFilter = ref("");
+const membersOpen = ref(false);
+watch(() => state.data.people.map((p) => p.id), (ids) => {
+  if (person.value && !ids.includes(person.value)) person.value = "";
+});
 const title = computed(() => nav.find((n) => n.id === page.value)?.label || "");
 const range = computed(() =>
   period.value === "custom"
@@ -952,9 +957,12 @@ async function copySecret() {
                 </h2>
                 <p>各自的努力，共同的未来</p>
               </div>
-              <button class="text-button" @click="showModal('person')">
-                添加成员 <AppIcon name="plus" :size="15" />
-              </button>
+              <div class="heading-actions">
+                <button class="text-button" @click="membersOpen = true">管理成员</button>
+                <button class="text-button" @click="showModal('person')">
+                  添加成员 <AppIcon name="plus" :size="15" />
+                </button>
+              </div>
             </div>
             <div class="member-grid">
               <button
@@ -1192,6 +1200,7 @@ async function copySecret() {
                 <p>估值按当日结束的价值记录，之后的收支会自动计入余额。</p>
               </div>
               <div class="heading-actions">
+                <button class="button secondary" @click="membersOpen = true">管理成员</button>
                 <button class="button secondary" @click="showModal('person')">
                   <AppIcon name="plus" :size="16" />添加成员
 </button
@@ -1717,6 +1726,11 @@ async function copySecret() {
       v-if="importOpen"
       @close="importOpen = false"
       @saved="saved"
+    />
+    <MemberManager
+      v-if="membersOpen"
+      @close="membersOpen = false"
+      @removed="notify('成员已删除')"
     />
     <ModalShell
       v-if="modal"
