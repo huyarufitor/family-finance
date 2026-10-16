@@ -1,0 +1,6 @@
+project_id = "family-finance"
+[functions.parse-entry]
+# The handler verifies the user with Supabase Auth, supporting new signing keys.
+verify_jwt = false
+[functions.import-bills]
+verify_jwt = false
