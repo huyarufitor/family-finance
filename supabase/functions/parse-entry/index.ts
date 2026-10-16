@@ -46,6 +46,10 @@ Deno.serve(async (req) => {
         model: environment("AI_MODEL"),
         response_format: { type: "json_object" },
         temperature: 0,
+        max_tokens: 600,
+        ...(Deno.env.get("AI_DISABLE_REASONING") === "true"
+          ? { reasoning: { enabled: false } }
+          : {}),
         messages: [
           {
             role: "system",

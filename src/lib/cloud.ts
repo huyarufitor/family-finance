@@ -3,6 +3,7 @@ import type { Ledger, Entry, Account, Person, Valuation } from "./types";
 const url = import.meta.env.VITE_SUPABASE_URL?.trim();
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 export const cloudConfigured = !!url && !!key;
+export const githubLoginEnabled = import.meta.env.VITE_GITHUB_LOGIN_ENABLED === "true";
 export const cloud = cloudConfigured
   ? createClient(url, key, {
       auth: {

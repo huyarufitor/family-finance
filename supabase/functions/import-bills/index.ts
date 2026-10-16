@@ -1,5 +1,5 @@
 import { body, json, rest } from "../_shared/http.ts";
-import { validBill } from "../_shared/validation.ts";
+import { importEntries } from "../_shared/ingest.ts";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return json(req, {});
   if (req.method !== "POST") return json(req, { error: "仅支持 POST" }, 405);
@@ -27,57 +27,7 @@ Deno.serve(async (req) => {
       input.entries.length > 200
     )
       return json(req, { error: "每批应包含 1—200 笔记录" }, 400);
-    const accountRes = await rest(
-      `accounts?id=eq.${channel.account_id}&household_id=eq.${channel.household_id}&select=person_id`,
-    );
-    const account = accountRes.ok ? (await accountRes.json())[0] : null;
-    if (!account) throw new Error("account missing");
-    const records = [];
-    for (const e of input.entries) {
-      if (!validBill(e))
-        return json(
-          req,
-          { error: "交易字段无效；转账请在网页中核对双方账户后录入" },
-          400,
-        );
-      records.push({
-        id: crypto.randomUUID(),
-        household_id: channel.household_id,
-        account_id: channel.account_id,
-        person_id: account.person_id,
-        kind: e.kind,
-        amount: e.amount,
-        date: e.date,
-        category: e.category,
-        note: e.note,
-        source: `channel:${channel.id}`,
-        external_id: e.externalId.trim(),
-      });
-    }
-    const unique = [
-      ...new Map(records.map((r) => [r.external_id, r])).values(),
-    ];
-    const result = await rest(
-      "transactions?on_conflict=household_id,source,account_id,external_id&select=id",
-      {
-        method: "POST",
-        headers: {
-          Prefer: "resolution=ignore-duplicates,return=representation",
-        },
-        body: JSON.stringify(unique),
-      },
-    );
-    if (!result.ok) throw new Error("insert failed");
-    const inserted = (await result.json()).length;
-    await rest(`import_channels?id=eq.${channel.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ last_received_at: new Date().toISOString() }),
-    });
-    return json(req, {
-      received: records.length,
-      inserted,
-      duplicates: records.length - inserted,
-    });
+    return json(req, await importEntries(channel, input.entries));
   } catch {
     return json(
       req,

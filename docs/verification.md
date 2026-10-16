@@ -1,26 +1,45 @@
 # 验证记录 · 2026-10-16
 
-## 本地已执行
+## 线上服务
 
-- `pnpm lint`：通过，无错误、无警告。
+- 网站：https://huyarufitor.github.io/family-finance/ ，GitHub Pages + Actions；无需自建服务器。
+- Supabase 免费项目 `family-finance`，新加坡区域。已执行两项迁移，部署 `parse-entry`、`import-bills`、`email-bills`。已启用表级 RLS、实时订阅及正式站点重定向地址。
+- GitHub OAuth 提供商已配置，公开 Auth settings 返回 github=true；前端构建开关已启用。用户的实际浏览器 OAuth 授权与回调仍待验证。
+- AI 已接入 OpenRouter 固定免费模型 `nvidia/nemotron-3.5-super-vl:free`，关闭 reasoning，不配置付费后备模型。直连真实调用 usage.cost=0；真实 Supabase 登录用户调用云函数将“今天中午吃快餐花了25元”解析为餐饮支出 2500 分。免费服务有可用性和速率限制，失败可使用本地解析。
+- Resend Full access 密钥已验证，已取得免费托管收件域名并创建 email.received webhook。签名密钥和收件域名已配置到 Supabase，前端公开域名已配置。免费套餐的测试发信只能发送至注册邮箱，不能直接向托管收件域名发送；真实收件等待用户从自己的邮箱发送合成 CSV。
+
+## 真实 Supabase 联调
+
+使用三个随机临时 Auth 账号和合成数据完成：
+
+- 账号登录、家庭创建、邀请家人加入与共享读取。
+- 外部账号无法读取家庭成员和邮件路由；SQL 事务另验证跨家庭写入拒绝、邀请码创建者权限与一次使用。
+- 授权渠道云函数首次导入 1 笔，再次导入 0 笔、重复 1 笔，数据库唯一约束有效。
+- 家庭成员在真实 Realtime 订阅中收到入账事件。修复订阅前尚未设置 JWT 的竞争问题，并添加回归测试。
+- 创建邮件渠道生成随机专用地址；真实 Resend 收件不在此项验证范围。
+- 真实免费 AI 云函数调用成功。
+
+联调后已删除临时账号、测试家庭与交易；SQL 测试使用事务回滚。未发送私人账单或读取用户邮箱。
+
+## 本地验证
+
+- `pnpm lint`：通过。
 - `pnpm typecheck`：通过。
-- `pnpm exec tsc -p supabase/functions/tsconfig.json`：云函数类型检查通过。
-- `pnpm test`：5 个文件、25 项测试全部通过。覆盖整数金额与千分位、完整金额解析、转账抵销、日历边界、估值收益、缺失边界估值留空、CSV 解析/去重/跳过记录及字段限制、备份校验、服务端记录校验、未授权请求拦截、渠道归属不可伪造、整批校验、AI 调用额度门禁。
-- 浏览器测试：通过 **5 项**，使用 bundled Node.js v24.19.0 执行 `node node_modules/@playwright/test/cli.js test`。覆盖自然语言确认记账、刷新持久化、成员筛选、CSV 重复导入、手机创建账户、完整备份下载、估值更新、时间校验、无效备份拒绝、Escape 关闭弹窗、全部五个页面手机宽度不溢出。
-- `pnpm build --base=/family-finance/`：生产构建成功，JS 约 146KB、gzip 约 55KB，CSS gzip 约 8.4KB。
-- 实际浏览器检查生产预览 `http://127.0.0.1:5175/family-finance/`：页面 HTTP 200；模板地址 `/family-finance/samples/bills.csv` HTTP 200；无 pageerror。1440px 桌面及 390px 手机截图已目视检查。预览命令须带 `--base=/family-finance/`，与构建前缀一致。
-- 独立代码审查发现并修复金额正则截断数字、旧投资估值被当作零收益两项问题，添加失败后通过的回归测试。复核通过。
-- `history-atlas` Git 状态保持干净，本次没有修改其文件。
+- `pnpm exec tsc -p supabase/functions/tsconfig.json`：通过。
+- `pnpm test`：8 个文件、35 项测试通过。
+- 使用 bundled Node v24 执行 Playwright：5 项浏览器测试通过。覆盖记账确认、持久化、成员筛选、CSV 去重、账户/估值、报告、备份及移动端布局。
+- `pnpm build --base=/family-finance/`：通过，JS gzip 约 87.1KB，CSS gzip 约 8.5KB。
+- 邮件签名、篡改/过期拒绝、发件人检查、CSV 附件入账及不支持附件处理通过测试。针对缺交易号的两笔相同消费添加先失败后通过的回归测试：整封拒绝且提示手动导入，防止自动合并真实消费。
+- 代码审查两项 P2 已修复并复核：邮件缺交易号处理、创建/撤销后渠道列表刷新。
 
-## 真实服务尚待配置及联调
+## 待验证与实际限制
 
-本地未提供 Supabase 项目、SMTP、AI 提供商密钥或已授权的银行/邮件账单来源。系统 Docker daemon 未运行，因此没有声称实际运行 Supabase 数据库。
+- GitHub OAuth 浏览器完整登录与回调。
+- 合成邮件真实收件与重投去重（配置已完成，等待用户发送测试邮件）。
+- 用户尚未指定真实账单来源与允许的转发邮箱；未启用任何私人邮箱转发规则。
+- 自动邮件当前仅接受带原始交易号的未加密 CSV，每封 1—5 个附件、合计 5MB / 5000 笔。不支持 PDF、Excel、ZIP 或正文账单。手动 CSV 缺交易号时仍需人工核对预览。
+- 没有已授权银行或支付机构个人流水 API；不将邮件接收当作已开通银行 API。
+- 语音依赖浏览器及识别服务，未进行真实麦克风录音验证。
+- 本次新增配置与修复的 GitHub Actions 上线结果将在推送后核对。
 
-- SQL 经过静态审查；需在新 Supabase 项目执行迁移，使用不同账号验证 RLS、邀请一次使用与过期、并发写入去重和 Realtime。
-- 云函数经过类型检查与模拟外部服务的请求测试，未实际调用模型、银行或邮件服务。
-- GitHub Actions 工作流和子路径构建已准备，尚未创建远程仓库或在线部署。
-- 浏览器语音取决于浏览器、权限和其识别服务，本地未进行真实语音录音测试。
-
-## 交付状态
-
-独立项目位于 `/Users/fitor/Documents/个人/family-finance`，本地开发预览为 `http://127.0.0.1:5180/`。无配置时为本机演示模式。托管后端配置步骤、公开环境变量、服务端 Secrets、授权账单接收协议与计算口径见 README。
+服务端密钥仅存本机被忽略文件及托管服务配置，不进入前端构建或 Git 仓库。

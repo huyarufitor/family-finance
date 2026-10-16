@@ -4,3 +4,15 @@ project_id = "family-finance"
 verify_jwt = false
 [functions.import-bills]
 verify_jwt = false
+[functions.email-bills]
+# Resend Svix signature is verified over the raw request body.
+verify_jwt = false
+
+[auth]
+site_url = "https://huyarufitor.github.io/family-finance/"
+additional_redirect_urls = ["https://huyarufitor.github.io/family-finance/", "http://127.0.0.1:5180/", "http://localhost:5173/"]
+
+[auth.external.github]
+enabled = true
+client_id = "env(GITHUB_CLIENT_ID)"
+secret = "env(GITHUB_CLIENT_SECRET)"

@@ -5,6 +5,7 @@ import TrendChart from "./components/TrendChart.vue";
 import EntryDialog from "./components/EntryDialog.vue";
 import ImportDialog from "./components/ImportDialog.vue";
 import ModalShell from "./components/ModalShell.vue";
+import EmailChannels from "./components/EmailChannels.vue";
 import {
   accountValue,
   dateRange,
@@ -27,7 +28,7 @@ import {
 } from "./lib/types";
 import { parseText } from "./lib/parser";
 import { validateBackup } from "./lib/import";
-import { aiParse, cloud, cloudConfigured, webhookUrl } from "./lib/cloud";
+import { aiParse, cloud, cloudConfigured, githubLoginEnabled, webhookUrl } from "./lib/cloud";
 import {
   addRows,
   errorMessage,
@@ -448,6 +449,14 @@ async function authAction(action: string) {
   authBusy.value = true;
   state.error = "";
   try {
+    if (action === "github") {
+      const { error } = await cloud.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).href },
+      });
+      if (error) throw error;
+      return;
+    }
     if (action === "send") {
       const { error } = await cloud.auth.signInWithOtp({
         email: email.value.trim(),
@@ -1421,6 +1430,10 @@ async function copySecret() {
 </template
               ><template v-else-if="!state.email"
                 >
+<template v-if="githubLoginEnabled">
+                  <button class="button primary" :disabled="authBusy" @click="authAction('github')">通过 GitHub 登录</button>
+                  <p class="small muted">家人可各自使用 GitHub 账号登录，再通过邀请码共享家庭账本。</p>
+                </template>
 <form
                   class="stacked-form"
                   @submit.prevent="authAction('send')"
@@ -1638,6 +1651,7 @@ async function copySecret() {
                 </div>
 </template
               >
+              <EmailChannels v-if="state.mode === 'cloud' && state.householdId && state.role === 'owner'" :key="`${state.householdId}:${channels.length}`" @changed="loadChannels" />
               <p class="small muted">
                 浏览器不能直接读取手机短信。只有配置真实授权渠道后才会开始自动接收账单。
               </p>

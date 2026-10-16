@@ -98,6 +98,9 @@ export async function openCloud() {
     state.email = session?.user.email || "";
     state.userId = session?.user.id || "";
     if (!session) return;
+    // Authenticate the socket explicitly before joining PostgreSQL changes.
+    // A newly restored Auth session may otherwise race the Realtime handshake.
+    await cloud.realtime.setAuth(session.access_token);
     const { data, error: err } = await cloud
       .from("memberships")
       .select("household_id,role,households(name)")

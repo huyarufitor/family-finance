@@ -32,6 +32,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_GITHUB_LOGIN_ENABLED: ${{ vars.VITE_GITHUB_LOGIN_ENABLED }}
+          VITE_MAIL_RECEIVING_DOMAIN: ${{ vars.VITE_MAIL_RECEIVING_DOMAIN }}
           PAGES_BASE_PATH: ${{ vars.PAGES_BASE_PATH || format('/{0}/', github.event.repository.name) }}
         run: pnpm build --base="$PAGES_BASE_PATH"
       - uses: actions/upload-pages-artifact@v3
