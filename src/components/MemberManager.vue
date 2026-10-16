@@ -24,6 +24,7 @@ async function remove(member: Person) {
 
 <template>
   <ModalShell title="管理家庭成员" @close="emit('close')">
+    <div class="dialog-form">
     <p class="small muted">可删除尚未关联账户或账单的资产归属成员。已有财务记录的成员会保留历史数据。</p>
     <p class="small muted">这里管理资产归属，不会更改家人的登录权限。</p>
     <ul class="member-list">
@@ -49,6 +50,7 @@ async function remove(member: Person) {
     <footer class="dialog-footer">
       <button type="button" class="button secondary" @click="emit('close')">关闭</button>
     </footer>
+    </div>
   </ModalShell>
 </template>
 
